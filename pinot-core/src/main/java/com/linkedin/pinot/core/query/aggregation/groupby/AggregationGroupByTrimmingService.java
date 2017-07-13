@@ -115,9 +115,15 @@ public class AggregationGroupByTrimmingService {
           if (priorityQueue == null) {
             trimmedResults.get(i).put(groupKey, intermediateResults[i]);
           } else {
-            priorityQueue.add(new GroupKeyResultPair(groupKey, (Comparable) intermediateResults[i]));
-            if (priorityQueue.size() > _trimSize) {
-              priorityQueue.poll();
+            GroupKeyResultPair newValue = new GroupKeyResultPair(groupKey, (Comparable) intermediateResults[i]);
+            if (priorityQueue.size() >= _trimSize) {
+              GroupKeyResultPair topValue = priorityQueue.peek();
+              if (topValue != null && priorityQueue.comparator().compare(topValue, newValue) < 0) {
+                priorityQueue.poll();
+                priorityQueue.add(newValue);
+              }
+            } else {
+              priorityQueue.add(newValue);
             }
           }
         }
@@ -171,9 +177,16 @@ public class AggregationGroupByTrimmingService {
       for (Map.Entry<String, Comparable> entry : finalResultMap.entrySet()) {
         String groupKey = entry.getKey();
         Comparable finalResult = entry.getValue();
-        priorityQueue.add(new GroupKeyResultPair(groupKey, finalResult));
-        if (priorityQueue.size() > _groupByTopN) {
-          priorityQueue.poll();
+
+        GroupKeyResultPair newValue = new GroupKeyResultPair(groupKey, finalResult);
+        if (priorityQueue.size() >= _groupByTopN) {
+          GroupKeyResultPair topValue = priorityQueue.peek();
+          if (topValue != null && priorityQueue.comparator().compare(topValue, newValue) < 0) {
+            priorityQueue.poll();
+            priorityQueue.add(newValue);
+          }
+        } else {
+          priorityQueue.add(newValue);
         }
       }
 
